@@ -42,14 +42,12 @@
                 (set-car! (cdddr player) (- (cadddr player) fuel-cost)) ;; Deduct fuel
                 (set-car! (cddddr player) (+ (car (cddddr player)) time-cost)) ;; Add travel time
                 (if (> damage 0)
-                    (format #t "You traveled to ~a. Your ship sustained ~a units of damage.\n"
-                            planet damage)
-                    (format #t "You traveled to ~a. No damage to your ship.\n" planet))
+                    (web-output (string-append "You traveled to " (symbol->string planet) ". Your ship sustained " (number->string damage) " units of damage."))
+                    (web-output (string-append "You traveled to " (symbol->string planet) ". No damage to your ship.")))
                 ;; Check for random events
                 (let ((event (random-event events)))
                   (if event
-                      (format #t "Event: ~a\n" event)
-                      (format #t "No events on this trip.\n"))))
-              (format #t "Not enough fuel to travel to ~a. You need at least ~a units.\n"
-                      planet fuel-cost)))
-        (format #t "~a is not a valid destination.\n" planet))))
+                      (web-output (string-append "Event: " event))
+                      (web-output "No events on this trip."))))
+              (web-output (string-append "Not enough fuel to travel to " (symbol->string planet) ". You need at least " (number->string fuel-cost) " units.")))
+        (web-output (string-append (symbol->string planet) " is not a valid destination.")))))

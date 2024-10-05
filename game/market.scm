@@ -1,18 +1,17 @@
 ;; game/market.scm
-
 (define-module (game market)
   #:export (display-market buy-goods sell-goods))
 
 (define (display-market planet goods)
   (let ((special-item (cdr (assoc 'special-item goods))))
-    (format #t "Market at ~a:\n" planet)
+    (web-output (string-append "Market at " (symbol->string planet) ":"))
     ;; Display goods for sale
     (for-each (lambda (item)
                 (unless (eq? (car item) 'special-item)
-                  (format #t "~a: ~a credits\n" (car item) (cdr item))))
+                  (web-output (string-append (symbol->string (car item)) ": " (number->string (cdr item)) " credits"))))
               goods)
     ;; Display special item
-    (format #t "Special item: ~a\n" special-item)))
+    (web-output (string-append "Special item: " special-item))))
 
 (define (buy-goods player goods item amount)
   (let ((price (cdr (assoc item goods))))
@@ -21,8 +20,9 @@
           ;; Deduct cost and add item to player's cargo
           (set-car! (cdr player) (- (cadr player) (* price amount)))
           (set-car! (cdddr player) (cons (cons item amount) (cadddr player)))
-          (format #t "You bought ~a units of ~a.\n" amount item))
-        (format #t "Not enough credits to buy ~a.\n" amount))))
+          (web-output (string-append "You bought " (number->string amount) " units of " (symbol->string item) "."))
+          )
+        (web-output (string-append "Not enough credits to buy " (number->string amount) " units of " (symbol->string item) "."))))
 
 (define (sell-goods player item amount)
   (let ((cargo (cadddr player))
@@ -32,6 +32,6 @@
           ;; Remove item from cargo and add credits
           (set-car! (cdddr player) (delete item cargo))
           (set-car! (cdr player) (+ (cadr player) price))
-          (format #t "You sold ~a units of ~a for ~a credits.\n"
-                  amount item price))
-        (format #t "You don't have ~a to sell.\n" item))))
+          (web-output (string-append "You sold " (number->string amount) " units of " (symbol->string item) " for " (number->string price) " credits."))
+          )
+        (web-output (string-append "You don't have " (symbol->string item) " to sell.")))))

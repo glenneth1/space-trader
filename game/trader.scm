@@ -7,7 +7,7 @@
   (list 'credits 500 'cargo '() 'fuel 100 'time 0)) ;; Starting fuel and time
 
 (define (display-status player)
-  (format #t "You have ~a credits.\n" (cadr player))
-  (format #t "Fuel: ~a units\n" (cadddr player))
-  (format #t "Elapsed time: ~a days\n" (car (cddddr player))) ;; Time in days
-  (format #t "Cargo: ~a\n" (cadddr (cdr player))))
+  (web-output (string-append "You have " (number->string (cadr player)) " credits."))
+  (web-output (string-append "Fuel: " (number->string (cadddr player)) " units"))
+  (web-output (string-append "Elapsed time: " (number->string (car (cddddr player))) " days"))
+  (web-output (string-append "Cargo: " (number->string (length (cadddr (cdr player)))))))

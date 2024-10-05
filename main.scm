@@ -3,16 +3,21 @@
              (game trader)
              (game travel)
              (game mission)
-             (game world) ;; Import the planets data
-             (srfi srfi-1)) ;; For list functions
+             (game world)
+             (srfi srfi-1)
+             (hoot web)) ;; Import hoot-web module for browser interaction
 
 (define player (create-player))
 
+;; Function to output to the web (HTML element)
+(define (web-output msg)
+  (js "document.getElementById('game-output').innerHTML = ~a" msg))
+
 ;; Add option to earn funds while on Earth
 (define (earn-funds player)
-  (let ((earnings (+ 50 (random 101)))) ;; Earn between 50-150 credits randomly
+  (let ((earnings (+ 50 (random 101))))
     (set-car! (cdr player) (+ (cadr player) earnings)) ;; Add earnings to credits
-    (format #t "You earned ~a credits on Earth.\n" earnings)))
+    (web-output (string-append "You earned " (number->string earnings) " credits on Earth."))))
 
 ;; Refuel and repair options when on Earth or another planet
 (define (refuel player)
@@ -21,8 +26,8 @@
         (begin
           (set-car! (cdr player) (- (cadr player) fuel-cost)) ;; Deduct credits
           (set-car! (cdddr player) 100) ;; Set fuel to 100
-          (format #t "You refueled your ship for ~a credits.\n" fuel-cost))
-        (format #t "You don't have enough credits to refuel.\n"))))
+          (web-output (string-append "You refueled your ship for " (number->string fuel-cost) " credits.")))
+        (web-output "You don't have enough credits to refuel."))))
 
 (define (repair player damage)
   (if (> damage 0)
@@ -30,43 +35,26 @@
         (if (>= (cadr player) repair-cost)
             (begin
               (set-car! (cdr player) (- (cadr player) repair-cost)) ;; Deduct repair cost
-              (format #t "Your ship was repaired for ~a credits.\n" repair-cost))
-            (format #t "You don't have enough credits to repair your ship.\n")))
-      (format #t "No repairs needed.\n")))
+              (web-output (string-append "Your ship was repaired for " (number->string repair-cost) " credits.")))
+            (web-output "You don't have enough credits to repair your ship.")))
+      (web-output "No repairs needed.")))
 
 ;; Regular service check after 30 days
 (define (regular-service player)
   (let ((time (car (cddddr player))))
     (if (>= time 30) ;; Require service every 30 days
-        (format #t "Your ship's engines need regular service. Please service your ship.\n")
-        (format #t "Your ship is still within service intervals.\n"))))
+        (web-output "Your ship's engines need regular service. Please service your ship.")
+        (web-output "Your ship is still within service intervals."))))
 
-;; Main game loop
-(define (game-loop)
-  (display-status player)
-  (if (eq? 'earth (car player)) ;; Check if player is on Earth
-      (begin
-        (format #t "You are on Earth. Do you want to earn funds? (y/n)\n")
-        (let ((choice (read-line)))
-          (if (string=? choice "y")
-              (earn-funds player)
-              (format #t "No funds earned.\n")))
-        ;; Refuel and repair options on Earth
-        (refuel player)
-        (repair player 0))) ;; Assume repairs happen on return to Earth
-  ;; Continue with travel, market, and mission interactions...
-  (format #t "Where would you like to go? (earth/mars/jupiter)\n")
-  (let ((planet (string->symbol (read-line))))
-    (travel-to-planet player planet planets) ;; Travel and handle fuel/damage
-    (regular-service player) ;; Check if engine service is required
-    (display-market planet (cdr (assoc planet planets)))
-    (list-missions planet)
-    (format #t "Do you want to accept a mission? (y/n)\n")
-    (let ((choice (read-line)))
-      (if (string=? choice "y")
-          (accept-mission planet)
-          (format #t "No mission accepted.\n")))
-    (game-loop)))
-
-;; Start the game
-(game-loop)
+;; Main game loop - Accepts input from the browser form
+(define (runGame input)
+  ;; Instead of reading input directly, take input from the browser form
+  (let ((user-command input))
+    ;; Process user-command like in the original game loop
+    (cond ((string=? user-command "earn funds") (earn-funds player))
+          ((string=? user-command "refuel") (refuel player))
+          ((string=? user-command "repair") (repair player 0))
+          ((string=? user-command "travel to mars") (travel-to-planet player 'mars planets))
+          ((string=? user-command "travel to jupiter") (travel-to-planet player 'jupiter planets))
+          ((string=? user-command "travel to earth") (travel-to-planet player 'earth planets))
+          (else (web-output "Unknown command.")))))
