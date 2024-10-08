@@ -1,6 +1,13 @@
 ;; game/travel.scm
 (define-module (game travel)
-  #:export (travel-to-planet random-damage))
+  #:export (travel-to-planet random-damage calculate-fuel-and-time))
+
+;; Linear Congruential Generator for simple random numbers
+(define *seed* (current-time))
+
+(define (lcg-random max)
+  (set! *seed* (modulo (+ (* *seed* 1103515245) 12345) 2147483648))
+  (modulo *seed* max))
 
 ;; Define distances and fuel costs (distance units, fuel cost, time in days)
 (define planet-distances
@@ -19,14 +26,15 @@
 (define (random-event events)
   (if (null? events)
       '()
-      (list-ref events (random (length events)))))
+      (list-ref events (lcg-random (length events)))))
 
 ;; Function to simulate random ship damage
 (define (random-damage)
-  (if (< (random 100) 30) ;; 30% chance of damage
-      (+ 10 (random 41))   ;; Damage between 10 and 50 units
+  (if (< (lcg-random 100) 30) ;; 30% chance of damage
+      (+ 10 (lcg-random 41))   ;; Damage between 10 and 50 units
       0)) ;; No damage
 
+;; Function to handle travel between planets
 (define (travel-to-planet player planet planets)
   (let ((planet-data (cdr (assoc planet planets))))
     (if planet-data
@@ -36,18 +44,19 @@
                (time-cost (cadr travel-info))
                (damage (random-damage))) ;; Check if player gets damage
           ;; Check if player has enough fuel
-          (if (>= (cadddr player) fuel-cost)
+          (if (>= (player-fuel player) fuel-cost)
               (begin
                 ;; Deduct fuel and add travel time
-                (set-car! (cdddr player) (- (cadddr player) fuel-cost)) ;; Deduct fuel
-                (set-car! (cddddr player) (+ (car (cddddr player)) time-cost)) ;; Add travel time
+                (set-player-fuel! player (- (player-fuel player) fuel-cost)) ;; Deduct fuel
+                (set-player-time! player (+ (player-time player) time-cost)) ;; Add travel time
+                ;; Output travel details
                 (if (> damage 0)
-                    (web-output (string-append "You traveled to " (symbol->string planet) ". Your ship sustained " (number->string damage) " units of damage."))
-                    (web-output (string-append "You traveled to " (symbol->string planet) ". No damage to your ship.")))
+                    (display (string-append "You traveled to " (symbol->string planet) ". Your ship sustained " (number->string damage) " units of damage.\n"))
+                    (display (string-append "You traveled to " (symbol->string planet) ". No damage to your ship.\n")))
                 ;; Check for random events
                 (let ((event (random-event events)))
                   (if event
-                      (web-output (string-append "Event: " event))
-                      (web-output "No events on this trip."))))
-              (web-output (string-append "Not enough fuel to travel to " (symbol->string planet) ". You need at least " (number->string fuel-cost) " units.")))
-        (web-output (string-append (symbol->string planet) " is not a valid destination.")))))
+                      (display (string-append "Event: " event "\n"))
+                      (display "No events on this trip.\n"))))
+              (display (string-append "Not enough fuel to travel to " (symbol->string planet) ". You need at least " (number->string fuel-cost) " units.\n"))))
+        (display (string-append (symbol->string planet) " is not a valid destination.\n")))))
